@@ -14,6 +14,9 @@ class RedisStore:
     Исключения:
         ValueError: Если какой-либо из обязательных параметров не указан
 
+    Возвращает:
+        RedisStore: Экземпляр хранилища Redis
+
     Пример использования:
         >>> store = RedisStore(host='192.168.1.139', port=6379, db=1, ttl=600)
         >>> store.save("session-123", "PHONE_1", "+79161234567", "phone")
@@ -26,10 +29,11 @@ class RedisStore:
         """
         Инициализация Redis-хранилища.
 
-        :param host: Хост Redis (обязательный)
-        :param port: Порт Redis (обязательный)
-        :param db: Номер базы данных (обязательный)
-        :param ttl: Время жизни данных в секундах (обязательный)
+        Args:
+            host (str): Хост Redis (обязательный)
+            port (int): Порт Redis (обязательный)
+            db (int): Номер базы данных (обязательный)
+            ttl (int): Время жизни данных в секундах (обязательный)
         """
         if not host:
             raise ValueError("Redis host must be specified in configuration")
@@ -44,7 +48,7 @@ class RedisStore:
             host=host,
             port=port,
             db=db,
-            decode_responses=True,  # Автоматическое декодирование в строки
+            decode_responses=True,
         )
         self.ttl = ttl
 
@@ -52,7 +56,7 @@ class RedisStore:
         """
         Сохраняет PII-данные в Redis.
 
-        Параметры:
+        Args:
             session_id (str): Уникальный идентификатор сессии
             placeholder (str): Токен-заменитель
             original (str): Оригинальное значение
@@ -62,6 +66,9 @@ class RedisStore:
             1. Создает ключ в формате "pii_map:{session_id}"
             2. Сохраняет пару placeholder-original в Redis Hash
             3. Устанавливает TTL для всего хэша
+
+        Returns:
+            None
         """
         key = f"pii_map:{session_id}"
         # Сохраняем в хэш Redis: ключ хэша = placeholder, значение = original
@@ -73,11 +80,12 @@ class RedisStore:
         """
         Загружает все PII-данные для указанной сессии.
 
-        Параметры:
+        Args:
             session_id (str): Идентификатор сессии
 
-        Возвращает:
-            dict: Словарь вида {placeholder: original} или пустой словарь, если сессия не найдена
+        Returns:
+            dict: Словарь, где ключи - токены-заменители, значения - оригинальные данные.
+                   Возвращает пустой словарь, если сессия не найдена.
         """
         key = f"pii_map:{session_id}"
         # Получаем все пары ключ-значение из хэша

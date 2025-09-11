@@ -16,11 +16,24 @@ app = Quart(__name__)
 store = RedisStore(**REDIS_CONFIG)
 
 
-# --- Декоратор для проверки API ключа ---
 def require_api_key(scope=None):
+    """Декоратор для проверки API ключа и разрешений (scopes)
+
+    Args:
+        scope: str or list[str] - Требуемый уровень доступа ('read' или 'full')
+
+    Returns:
+        function: Декорированная функция с проверкой авторизации
+
+    Raises:
+        401: Если API ключ отсутствует или невалиден
+        403: Если недостаточно прав доступа
+    """
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
+            # Проверка наличия API ключа в заголовках
             api_key = request.headers.get("X-API-KEY")
             if not api_key:
                 return jsonify({"error": "API key is missing"}), 401
@@ -45,7 +58,11 @@ def require_api_key(scope=None):
 
 
 def load_tokens():
-    """Загружает токены из файла"""
+    """Загружает токены доступа из JSON-файла
+
+    Returns:
+        dict: Словарь с токенами и их параметрами
+    """
     if not os.path.exists(TOKENS_FILE):
         return {}
     try:
@@ -56,14 +73,25 @@ def load_tokens():
 
 
 def save_tokens(tokens):
-    """Сохраняет токены в файл"""
+    """Сохраняет токены доступа в JSON-файл
+
+    Args:
+        tokens (dict): Словарь токенов для сохранения
+    """
     with open(TOKENS_FILE, "w") as f:
         json.dump(tokens, f, indent=2)
 
 
 @app.route("/generate-token", methods=["POST"])
 async def generate_token():
-    """Генерирует уникальный токен сессии"""
+    """Генерирует уникальный токен сессии с указанным уровнем доступа
+
+    Request JSON:
+        - scope: Уровень доступа ('read' или 'full')
+
+    Returns:
+        JSON: Сгенерированный токен в формате UUIDv4
+    """
     data = await request.get_json()
     scope = data.get("scope", "read")
 
@@ -81,7 +109,14 @@ async def generate_token():
 @app.route("/anonymize", methods=["POST"])
 @require_api_key(scope="full")
 async def anonymize_text():
-    """Анонимизирует текст и возвращает session_id"""
+    """Анонимизирует текст с помощью PIIAnonymizer
+
+    Request JSON:
+        - text: Исходный текст для анонимизации
+
+    Returns:
+        JSON: Анонимизированный текст и идентификатор сессии
+    """
     data = await request.get_json()
     text = data.get("text")
 
@@ -99,7 +134,15 @@ async def anonymize_text():
 @app.route("/restore", methods=["POST"])
 @require_api_key(scope=["read", "full"])
 async def restore_text():
-    """Восстанавливает текст по session_id"""
+    """Восстанавливает оригинальный текст по session_id
+
+    Request JSON:
+        - sanitized: Анонимизированный текст
+        - session_id: Идентификатор сессии анонимизации
+
+    Returns:
+        JSON: Восстановленный оригинальный текст
+    """
     data = await request.get_json()
     sanitized = data.get("sanitized")
     session_id = data.get("session_id")

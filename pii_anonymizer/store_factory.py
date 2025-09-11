@@ -5,15 +5,22 @@ def get_store(store_type, **kwargs):
     """
     Фабрика для создания экземпляров хранилища.
 
-    Параметры:
+    Args:
         store_type (str): Тип хранилища (поддерживается только 'redis')
-        **kwargs: Дополнительные параметры для инициализации хранилища
+        **kwargs: Дополнительные параметры для инициализации хранилища.
+                  Для RedisStore: host, port, db, ttl
 
-    Возвращает:
-        Экземпляр хранилища
+    Returns:
+        Store: Экземпляр хранилища (в текущей реализации RedisStore)
 
-    Исключения:
+    Raises:
         ValueError: Если указан неподдерживаемый тип хранилища
+
+    Пример использования:
+        >>> from pii_anonymizer.store_factory import get_store
+        >>> store = get_store("redis", host="localhost", port=6379, db=0, ttl=3600)
+        >>> type(store)
+        <class 'pii_anonymizer.redis_store.RedisStore'>
     """
     if store_type == "redis":
         return RedisStore(**kwargs)
