@@ -87,3 +87,15 @@ class RedisStore:
         if mapping:
             return {k: v for k, v in mapping.items()}
         return {}
+
+    def ping(self):
+        """
+        Проверяет соединение с Redis.
+
+        Возвращает:
+            bool: True если соединение активно, False если произошла ошибка
+        """
+        try:
+            return self.r.ping()
+        except redis.exceptions.ConnectionError:
+            return False

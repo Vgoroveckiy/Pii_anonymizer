@@ -27,6 +27,7 @@ REDIS_CONFIG = {
 
 # Время жизни сессий в минутах (для хранения маппинга токенов)
 SESSION_TTL_MINUTES = 10
+
 PLACEHOLDER_PREFIX = {"name": "NAME", "phone": "PHONE"}
 
 # Список часто встречающихся русских имён для обнаружения PII
