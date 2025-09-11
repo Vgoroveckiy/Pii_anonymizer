@@ -1,0 +1,46 @@
+# Существующие исключения
+/.venv
+
+# Стандартные исключения Python
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+*.py[cod]
+*$py.class
+
+# Файлы окружения
+.env
+.env.local
+.env.*.local
+tokens.json
+
+# Артефакты упаковки и тестирования
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Логи и системные файлы
+logs/
+*.log
+*.sqlite
+*.sqlite3
+
+# Файлы редактора/IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.bkp
+
+# Системные файлы
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
