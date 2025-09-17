@@ -100,12 +100,12 @@ python anonymizer.py
 ```bash
 POST http://localhost:5000/anonymize
 Headers: {"X-API-KEY": "токен c доступом full"}
-Body: {"text": "Ваш текст с PII данными"}
+Body: {"text": "Иван, тел. 89161234567"}
 
 Ответ:
 {
-  "sanitized": "Анонимизированный текст",
-  "session_id": "идентификатор_сессии"
+  "sanitized": "[NAME_acd41b], тел. [PHONE_92cc5d]",
+  "session_id": "eaf696e9-7723-493f-a78a-deca6e2834e2"
 }
 ```
 
@@ -113,14 +113,15 @@ Body: {"text": "Ваш текст с PII данными"}
 ```bash
 POST http://localhost:5000/restore
 Headers: {"X-API-KEY": "токен c доступом read или full"}
-Body: {
-  "sanitized": "Анонимизированный текст",
-  "session_id": "идентификатор_сессии"
+Body: 
+{
+  "sanitized": "[NAME_acd41b], тел. [PHONE_92cc5d]",
+  "session_id": "eaf696e9-7723-493f-a78a-deca6e2834e2"
 }
 
 Ответ:
 {
-  "restored_text": "Восстановленный текст"
+  "restored_text": "Иван, тел. 89161234567"
 }
 ```
 
