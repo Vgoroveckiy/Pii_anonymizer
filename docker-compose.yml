@@ -1,0 +1,37 @@
+services:
+  redis:
+    image: docker-hub.vgorovetskiy.keenetic.pro/redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+    networks:
+      - redis_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  app:
+    image: docker-hub.vgorovetskiy.keenetic.pro/pii_anonymizer:v1.0.1
+    container_name: pii-anonymizer-app
+    restart: unless-stopped
+    ports:
+      - "5005:5000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - redis_network
+
+volumes:
+  redis_data: null
+
+networks:
+  redis_network:
+    driver: bridge

@@ -20,10 +20,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 REDIS_CONFIG = {
-    "host": "192.168.1.139",  # Хост Redis сервера (можно переопределить через REDIS_HOST)
-    "port": 6379,  # Порт Redis сервера (можно переопределить через REDIS_PORT)
-    "db": 1,  # Номер базы данных Redis (можно переопределить через REDIS_DB)
-    "ttl": 600,  # Время жизни данных в секундах (10 минут) (можно переопределить через REDIS_TTL)
+    "host": os.getenv(
+        "REDIS_HOST", "redis"
+    ),  # Хост Redis сервера (можно переопределить через REDIS_HOST)
+    "port": int(
+        os.getenv("REDIS_PORT", "6379")
+    ),  # Порт Redis сервера (можно переопределить через REDIS_PORT)
+    "db": int(
+        os.getenv("REDIS_DB", "1")
+    ),  # Номер базы данных Redis (можно переопределить через REDIS_DB)
+    "ttl": int(
+        os.getenv("REDIS_TTL", "600")
+    ),  # Время жизни данных в секундах (10 минут) (можно переопределить через REDIS_TTL)
 }
 
 SESSION_TTL_MINUTES = 10  # Время жизни сессий в минутах (для хранения маппинга токенов)
