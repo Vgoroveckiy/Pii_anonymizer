@@ -160,12 +160,107 @@ Body: {"scope": "read"}
 
 
 ## 8. Развертывание в продакшене
-- Проект оформлен для запуска в Docker-контейнере
-- Конфигурация Docker-контейнера в файле `docker-compose.yml`
-- Конфигурация содержит сам модуль и базу данных Redis
-- Для запуска проекта в Docker-контейнере необходимо выполнить команду:
+
+Проект оформлен для запуска в Docker-контейнерах с помощью Docker Compose. Конфигурация включает два сервиса: приложение PII Anonymizer и базу данных Redis.
+
+### Конфигурация Docker Compose
+
+Файл `docker-compose.yml` содержит:
+
+```yaml
+services:
+  redis:
+    image: docker-hub.vgorovetskiy.keenetic.pro/redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  app:
+    image: docker-hub.vgorovetskiy.keenetic.pro/pii_anonymizer:v1.0.1
+    container_name: pii-anonymizer-app
+    restart: unless-stopped
+    ports:
+      - "5005:5000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - redis_network
+
+volumes:
+  redis_data:
+
+networks:
+  redis_network:
+    driver: bridge
+```
+
+Ключевые параметры:
+- **Redis**:
+  - Используется Alpine-образ Redis 7.2
+  - Данные сохраняются в volume `redis_data`
+  - Конфигурация задается через `redis.conf`
+  - Healthcheck проверяет доступность каждые 10 секунд
+
+- **Приложение**:
+  - Запускается на порту 5000 (доступ с хоста через порт 5005)
+  - Зависит от работоспособности Redis
+  - Использует bridge-сеть для связи с Redis
+
+### Конфигурация Dockerfile
+
+Приложение собирается на основе официального образа Python:
+
+```Dockerfile
+FROM docker-hub.vgorovetskiy.keenetic.pro/python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python", "anonymizer.py"]
+```
+
+Этапы сборки:
+1. Установка зависимостей из `requirements.txt`
+2. Копирование всех файлов проекта
+3. Запуск приложения через `anonymizer.py`
+
+### Запуск в production
+1. Соберите образ приложения:
+```bash
+docker build -t pii-anonymizer .
+```
+2. Запустите сервисы:
 ```bash
 docker-compose up -d
+```
+3. Для остановки:
+```bash
+docker-compose down
+```
+
+### Мониторинг
+- Проверьте состояние сервисов:
+```bash
+docker-compose ps
+```
+- Просмотрите логи приложения:
+```bash
+docker-compose logs app
 ```
 
 ## 9. Ограничения

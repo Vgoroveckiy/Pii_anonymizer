@@ -66,8 +66,6 @@ pip install -r requirements.txt
 
 Основные настройки находятся в `pii_anonymizer/config.py`:
 
-
-
 ### Доступные методы
 
 ```python
@@ -124,8 +122,6 @@ app = Application.builder().token("YOUR_TOKEN").build()
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.run_polling()
 ```
-
-
 
 ## Интеграция в сторонние проекты
 
@@ -251,6 +247,34 @@ Body: {
 }
 ```
 Примечание: Сессия хранится 10 минут. По истечении этого времени восстановление будет невозможно.
+
+## Деплой через Docker Compose
+
+Проект поддерживает развертывание с помощью Docker Compose:
+
+1. Убедитесь, что у вас установлены Docker и Docker Compose
+2. Соберите образ приложения:
+```bash
+docker build -t pii-anonymizer .
+```
+3. Запустите сервисы:
+```bash
+docker-compose up -d
+```
+
+Сервисы:
+- **Redis**: Использует образ Redis 7.2 из приватного реестра
+- **Приложение**: Запускает PII Anonymizer на порту 5000 (доступен на хосте через порт 5005)
+
+Конфигурация:
+- Redis сохраняет данные в volume `redis_data`
+- Приложение зависит от работоспособности Redis
+- Healthcheck проверяет доступность Redis каждые 10 секунд
+
+Для остановки сервисов:
+```bash
+docker-compose down
+```
 
 ## Лицензия
 
