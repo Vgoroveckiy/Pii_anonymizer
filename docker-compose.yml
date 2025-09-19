@@ -21,7 +21,6 @@ services:
     build: .
     container_name: pii-anonymizer-app
     restart: unless-stopped
-    command: hypercorn anonymizer:app --bind 0.0.0.0:5000
     ports:
       - "5005:5000"
     depends_on:
