@@ -71,8 +71,12 @@ class RedisStore:
         key = f"pii_map:{session_id}"
         async with pool.get() as conn:
             # Получаем все пары ключ-значение из хэша
-            mapping = await conn.execute("hgetall", key)
-            return mapping
+            mapping_list = await conn.execute("hgetall", key)
+            # Преобразуем список [k1, v1, k2, v2] в словарь {k1: v1, k2: v2}
+            if not mapping_list:
+                return {}
+            it = iter(mapping_list)
+            return dict(zip(it, it))
 
     async def ping(self):
         try:
