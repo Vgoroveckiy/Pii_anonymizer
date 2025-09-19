@@ -1,7 +1,5 @@
-# requirements.txt
-
 aiofiles==24.1.0
-aioredis  # Асинхронный Redis-клиент
+aioredis
 annotated-types==0.7.0
 anyio==4.10.0
 blinker==1.9.0
