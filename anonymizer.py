@@ -22,6 +22,14 @@ store = RedisStore(
 )
 
 
+@app.after_serving
+async def close_redis_store():
+    """Закрывает пул соединений Redis при завершении работы приложения"""
+    await store.close()
+    # Даем время для завершения асинхронных задач
+    await asyncio.sleep(0.1)
+
+
 def require_api_key(scope=None):
     """Декоратор для проверки API ключа и разрешений (scopes)
 

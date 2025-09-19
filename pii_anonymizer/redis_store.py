@@ -78,6 +78,14 @@ class RedisStore:
             it = iter(mapping_list)
             return dict(zip(it, it))
 
+    async def close(self):
+        """Закрывает пул соединений."""
+        if self.pool:
+            # Правильное закрытие пула для aioredis 1.3.1
+            self.pool.close()
+            await self.pool.wait_closed()
+            self.pool = None
+
     async def ping(self):
         try:
             pool = await self._get_pool()
