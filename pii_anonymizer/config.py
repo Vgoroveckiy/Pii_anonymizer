@@ -21,9 +21,7 @@ load_dotenv()
 
 REDIS_CONFIG = {
     "host": os.getenv(
-        "REDIS_HOST",
-        "192.168.1.139",
-        # "REDIS_HOST", "redis"
+        "REDIS_HOST", "redis"
     ),  # Хост Redis сервера (можно переопределить через REDIS_HOST)
     "port": int(
         os.getenv("REDIS_PORT", "6379")
