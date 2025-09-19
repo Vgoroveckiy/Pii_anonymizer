@@ -1,9 +1,9 @@
-import aioredis
+import redis.asyncio as redis
 
 
 class RedisStore:
     """
-    Асинхронное хранилище PII-данных в Redis с поддержкой TTL (совместимость с aioredis 1.3.1).
+    Асинхронное хранилище PII-данных в Redis с использованием redis-py (асинхронный режим).
 
     Параметры инициализации:
         host (str): Хост Redis (обязательный)
@@ -25,7 +25,7 @@ class RedisStore:
         {'PHONE_1': '+79161234567'}
     """
 
-    def __init__(self, host, port, db, ttl, pool_size=100):
+    def __init__(self, host, port, db, ttl):
         if not host:
             raise ValueError("Redis host must be specified in configuration")
         if not port:
@@ -39,57 +39,27 @@ class RedisStore:
         self.port = port
         self.db = db
         self.ttl = ttl
-        self.pool_size = pool_size
-        self.pool = None
-
-    async def _get_pool(self):
-        """Создает или возвращает существующий пул соединений"""
-        if not self.pool:
-            from .config import REDIS_CONFIG
-
-            # Создаем пул соединений для aioredis 1.3.1
-            self.pool = await aioredis.create_pool(
-                (self.host, self.port),
-                db=self.db,
-                encoding="utf-8",
-                minsize=1,
-                maxsize=self.pool_size,
-            )
-        return self.pool
+        self.redis = redis.Redis(host=host, port=port, db=db, decode_responses=True)
 
     async def save(self, session_id, placeholder, original, pii_type):
-        pool = await self._get_pool()
         key = f"pii_map:{session_id}"
-        async with pool.get() as conn:
-            # Сохраняем в хэш Redis: ключ хэша = placeholder, значение = original
-            await conn.execute("hset", key, placeholder, original)
-            # Устанавливаем TTL для всего хэша
-            await conn.execute("expire", key, self.ttl)
+        # Сохраняем в хэш Redis: ключ хэша = placeholder, значение = original
+        await self.redis.hset(key, placeholder, original)
+        # Устанавливаем TTL для всего хэша
+        await self.redis.expire(key, self.ttl)
 
     async def load_session(self, session_id):
-        pool = await self._get_pool()
         key = f"pii_map:{session_id}"
-        async with pool.get() as conn:
-            # Получаем все пары ключ-значение из хэша
-            mapping_list = await conn.execute("hgetall", key)
-            # Преобразуем список [k1, v1, k2, v2] в словарь {k1: v1, k2: v2}
-            if not mapping_list:
-                return {}
-            it = iter(mapping_list)
-            return dict(zip(it, it))
+        # Получаем все пары ключ-значение из хэша
+        mapping = await self.redis.hgetall(key)
+        return mapping or {}
 
     async def close(self):
-        """Закрывает пул соединений."""
-        if self.pool:
-            # Правильное закрытие пула для aioredis 1.3.1
-            self.pool.close()
-            await self.pool.wait_closed()
-            self.pool = None
+        """Закрывает соединение с Redis"""
+        await self.redis.close()
 
     async def ping(self):
         try:
-            pool = await self._get_pool()
-            async with pool.get() as conn:
-                return await conn.execute("ping") == b"PONG"
-        except aioredis.RedisError:
+            return await self.redis.ping()
+        except redis.RedisError:
             return False

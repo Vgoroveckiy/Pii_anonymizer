@@ -21,7 +21,9 @@ load_dotenv()
 
 REDIS_CONFIG = {
     "host": os.getenv(
-        "REDIS_HOST", "redis"
+        "REDIS_HOST",
+        "192.168.1.139",
+        # "REDIS_HOST", "redis"
     ),  # Хост Redis сервера (можно переопределить через REDIS_HOST)
     "port": int(
         os.getenv("REDIS_PORT", "6379")
@@ -32,9 +34,6 @@ REDIS_CONFIG = {
     "ttl": int(
         os.getenv("REDIS_TTL", "600")
     ),  # Время жизни данных в секундах (можно переопределить через REDIS_TTL)
-    "pool_size": int(
-        os.getenv("REDIS_POOL_SIZE", "100")
-    ),  # Максимальное количество соединений (можно переопределить через REDIS_POOL_SIZE)
 }
 
 SESSION_TTL_MINUTES = 10  # Время жизни сессий в минутах (для хранения маппинга токенов)

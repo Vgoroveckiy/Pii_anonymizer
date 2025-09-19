@@ -1,6 +1,7 @@
 import os
 import uuid
 import json
+
 from functools import wraps
 from quart import Quart, request, jsonify
 from pii_anonymizer import PIIAnonymizer
@@ -13,7 +14,6 @@ TOKENS_FILE = "tokens.json"
 app = Quart(__name__)
 
 # Инициализация хранилища
-# Передаем только необходимые параметры (исключаем pool_size)
 store = RedisStore(
     host=REDIS_CONFIG["host"],
     port=REDIS_CONFIG["port"],
@@ -24,10 +24,8 @@ store = RedisStore(
 
 @app.after_serving
 async def close_redis_store():
-    """Закрывает пул соединений Redis при завершении работы приложения"""
+    """Закрывает соединение с Redis при завершении работы приложения"""
     await store.close()
-    # Даем время для завершения асинхронных задач
-    await asyncio.sleep(0.1)
 
 
 def require_api_key(scope=None):
@@ -177,11 +175,11 @@ async def restore_text():
 async def service_status():
     """Проверяет статус сервиса и подключение к Redis"""
     try:
-        is_connected = store.ping()
+        ping_result = await store.ping()
         return jsonify(
             {
                 "status": "running",
-                "redis_connected": is_connected,
+                "redis_connected": ping_result == "PONG",
                 "session_ttl_minutes": SESSION_TTL_MINUTES,
             }
         )

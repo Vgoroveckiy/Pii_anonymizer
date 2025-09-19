@@ -23,6 +23,13 @@ def get_store(store_type, **kwargs):
         <class 'pii_anonymizer.redis_store.RedisStore'>
     """
     if store_type == "redis":
-        return RedisStore(**kwargs)
+        # Передаем только необходимые параметры для RedisStore
+        required_params = {
+            "host": kwargs.get("host"),
+            "port": kwargs.get("port"),
+            "db": kwargs.get("db"),
+            "ttl": kwargs.get("ttl"),
+        }
+        return RedisStore(**required_params)
     else:
         raise ValueError(f"Unsupported store type: {store_type}")
