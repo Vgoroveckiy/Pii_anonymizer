@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:7.2-alpine
+    image: docker-hub.vgorovetskiy.keenetic.pro/redis:7.2-alpine
     container_name: redis
     restart: unless-stopped
     volumes:
@@ -18,7 +18,7 @@ services:
       retries: 3
 
   app:
-    build: .
+    image: docker-hub.vgorovetskiy.keenetic.pro/pii_anonymizer:v1.0.1
     container_name: pii-anonymizer-app
     restart: unless-stopped
     ports:
