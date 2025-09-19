@@ -1,3 +1,4 @@
+import asyncio
 from .extractor import PIIExtractor
 from .replacer import PIIReplacer
 from .store_factory import get_store  # Используем фабрику для создания хранилища
@@ -10,7 +11,7 @@ class PIIAnonymizer:
     Не использует LLM, работает только с правилами для имён и телефонов.
 
     Args:
-        session_id (str): Уникальный идентификатор сессии для связывания данных
+        session_id (str): Уникальный идентификатор сессии
 
     Attributes:
         extractor (PIIExtractor): Экстрактор сущностей
@@ -23,10 +24,10 @@ class PIIAnonymizer:
 
     Пример использования:
         >>> anonymizer = PIIAnonymizer("session-123")
-        >>> sanitized = anonymizer.anonymize("Иван, тел. 89161234567")
+        >>> sanitized = await anonymizer.anonymize("Иван, тел. 89161234567")
         >>> print(sanitized)
         "NAME_1, тел. PHONE_1"
-        >>> restored = anonymizer.deanonymize(sanitized)
+        >>> restored = await anonymizer.deanonymize(sanitized)
         >>> print(restored)
         "Иван, тел. 89161234567"
     """
@@ -41,37 +42,25 @@ class PIIAnonymizer:
         )  # Используем только Redis с конфигурацией
         self.session_id = session_id
 
-    def anonymize(self, text: str) -> str:
+    async def anonymize(self, text: str) -> str:
         """
-        Анонимизирует PII-данные в тексте, заменяя их на уникальные токены.
+        Асинхронно анонимизирует PII-данные в тексте.
 
         Args:
             text (str): Исходный текст, содержащий PII-данные
 
         Returns:
             str: Текст с замененными PII-данными на токены
-
-        Процесс:
-            1. Извлекает PII-сущности (имена и телефоны)
-            2. Генерирует уникальные токены-заменители
-            3. Сохраняет соответствия в Redis
-            4. Заменяет оригинальные значения на токены
-
-        Примечание:
-            Возвращаемые сущности в `entities` имеют структуру:
-            {
-                "phone": List[str] - список найденных телефонных номеров,
-                "name": List[str] - список найденных имен
-            }
         """
-        entities = self.extractor.extract_all(text)
+        # Выносим CPU-intensive операцию в отдельный поток
+        entities = await asyncio.to_thread(self.extractor.extract_all, text)
         replacements = []  # Список замен: (оригинал, плейсхолдер)
 
         # Обрабатываем телефоны
         for phone in entities["phone"]:
             normalized = normalize_phone(phone)
             placeholder = self.replacer.create_placeholder("phone", normalized)
-            self.store.save(self.session_id, placeholder, normalized, "phone")
+            await self.store.save(self.session_id, placeholder, normalized, "phone")
             replacements.append((phone, placeholder))
 
             # Добавляем варианты для замены
@@ -83,7 +72,7 @@ class PIIAnonymizer:
         # Обрабатываем имена
         for name in entities["name"]:
             placeholder = self.replacer.create_placeholder("name", name)
-            self.store.save(self.session_id, placeholder, name, "name")
+            await self.store.save(self.session_id, placeholder, name, "name")
             replacements.append((name, placeholder))
 
         # Сортируем по убыванию длины для правильной замены
@@ -95,26 +84,17 @@ class PIIAnonymizer:
 
         return text
 
-    def deanonymize(self, text: str) -> str:
+    async def deanonymize(self, text: str) -> str:
         """
-        Восстанавливает оригинальные PII-данные из текста с токенами.
+        Асинхронно восстанавливает оригинальный текст.
 
         Args:
             text (str): Текст, содержащий токены вместо PII-данных
 
         Returns:
             str: Текст с восстановленными PII-данными
-
-        Процесс:
-            1. Загружает маппинг токен-оригинал из хранилища
-            2. Заменяет все токены на оригинальные значения
-
-        Примечание:
-            `mapping` - это словарь, где:
-                ключ (str): токен-плейсхолдер (например, "NAME_1")
-                значение (str): оригинальное значение (например, "Иван")
         """
-        mapping = self.store.load_session(self.session_id)
+        mapping = await self.store.load_session(self.session_id)
         for placeholder, original in mapping.items():
             text = text.replace(placeholder, original)
         return text

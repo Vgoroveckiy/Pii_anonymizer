@@ -1,6 +1,7 @@
 # requirements.txt
 
 aiofiles==24.1.0
+aioredis  # Асинхронный Redis-клиент
 annotated-types==0.7.0
 anyio==4.10.0
 blinker==1.9.0
@@ -37,7 +38,6 @@ pymorphy2-dicts-ru==2.4.417127.4579844
 python-dotenv==1.1.1
 Quart==0.20.0
 razdel==0.5.0
-redis==5.0.5
 slovnet==0.6.0
 sniffio==1.3.1
 sortedcontainers==2.4.0

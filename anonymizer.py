@@ -126,7 +126,7 @@ async def anonymize_text():
     # Генерируем session_id для операции
     session_id = str(uuid.uuid4())
     anonymizer = PIIAnonymizer(session_id)
-    anonymized_text = anonymizer.anonymize(text)
+    anonymized_text = await anonymizer.anonymize(text)
 
     return jsonify({"sanitized": anonymized_text, "session_id": session_id})
 
@@ -153,7 +153,7 @@ async def restore_text():
         return jsonify({"error": "Session ID is required"}), 400
 
     anonymizer = PIIAnonymizer(session_id)
-    restored_text = anonymizer.deanonymize(sanitized)
+    restored_text = await anonymizer.deanonymize(sanitized)
 
     return jsonify({"restored_text": restored_text})
 
@@ -174,6 +174,9 @@ async def service_status():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+# Установка ограничения на размер запроса (10 МБ)
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
