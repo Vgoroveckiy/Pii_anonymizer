@@ -25,7 +25,7 @@ class RedisStore:
         {'PHONE_1': '+79161234567'}
     """
 
-    def __init__(self, host, port, db, ttl):
+    def __init__(self, host, port, db, ttl, pool_size=100):
         if not host:
             raise ValueError("Redis host must be specified in configuration")
         if not port:
@@ -39,6 +39,7 @@ class RedisStore:
         self.port = port
         self.db = db
         self.ttl = ttl
+        self.pool_size = pool_size
         self.pool = None
 
     async def _get_pool(self):
@@ -52,7 +53,7 @@ class RedisStore:
                 db=self.db,
                 encoding="utf-8",
                 minsize=1,
-                maxsize=REDIS_CONFIG["pool_size"],
+                maxsize=self.pool_size,
             )
         return self.pool
 

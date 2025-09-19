@@ -13,7 +13,13 @@ TOKENS_FILE = "tokens.json"
 app = Quart(__name__)
 
 # Инициализация хранилища
-store = RedisStore(**REDIS_CONFIG)
+# Передаем только необходимые параметры (исключаем pool_size)
+store = RedisStore(
+    host=REDIS_CONFIG["host"],
+    port=REDIS_CONFIG["port"],
+    db=REDIS_CONFIG["db"],
+    ttl=REDIS_CONFIG["ttl"],
+)
 
 
 def require_api_key(scope=None):
