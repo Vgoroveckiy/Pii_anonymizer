@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем файлы проекта
 COPY . .
 
-# Запускаем приложение
-CMD ["python", "anonymizer.py"]
+# Запускаем приложение через ASGI-сервер Hypercorn
+CMD ["hypercorn", "anonymizer:app", "--bind", "0.0.0.0:5000"]
