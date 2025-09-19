@@ -62,22 +62,22 @@ class RedisStore:
         key = f"pii_map:{session_id}"
         async with pool.get() as conn:
             # Сохраняем в хэш Redis: ключ хэша = placeholder, значение = original
-            await conn.hset(key, placeholder, original)
+            await conn.execute("hset", key, placeholder, original)
             # Устанавливаем TTL для всего хэша
-            await conn.expire(key, self.ttl)
+            await conn.execute("expire", key, self.ttl)
 
     async def load_session(self, session_id):
         pool = await self._get_pool()
         key = f"pii_map:{session_id}"
         async with pool.get() as conn:
             # Получаем все пары ключ-значение из хэша
-            mapping = await conn.hgetall(key)
+            mapping = await conn.execute("hgetall", key)
             return mapping
 
     async def ping(self):
         try:
             pool = await self._get_pool()
             async with pool.get() as conn:
-                return await conn.ping()
+                return await conn.execute("ping") == b"PONG"
         except aioredis.RedisError:
             return False
